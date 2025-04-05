@@ -1,0 +1,47 @@
+# Use docker image for Raspberry Pi3 (Bookworm) with arm64/v8
+mkdir C:\tmp\
+docker run -it --platform=linux/arm64/v8 -v C:\tmp\:/home/ balenalib/raspberrypi3-64:bookworm-build bash
+
+sudo apt update
+sudo apt install build-essential libssl-dev ninja-build python3-pip python3.11-venv python3-numpy -y
+
+# CMake 3.28 or higher is required.
+wget https://github.com/Kitware/CMake/releases/download/v3.28.4/cmake-3.28.4-linux-aarch64.sh
+chmod +x cmake-3.28.4-linux-aarch64.sh
+./cmake-3.28.4-linux-aarch64.sh
+export PATH=/home/new_ort/cmake-3.28.4-linux-aarch64/bin:$PATH
+
+# Create new python environment
+python3 -m venv py_env
+source ./py_env/bin/activate
+python3 -m pip install packaging wheel
+
+# Clone ONNX Runtime
+git clone --recursive https://github.com/microsoft/onnxruntime.git
+cd onnxruntime
+
+# Build with arm64 flag for RaspberryPi 3B+ (64 bit).
+./build.sh --config Release --arm64 --parallel 4 --cmake_generator Ninja --skip_tests --skip_submodule_sync --build_wheel --build_shared_lib --allow_running_as_root
+
+# Copy required files and package in a zip.
+version=$(cat VERSION_NUMBER)
+ort_output_dir="onnxruntime-linux-aarch64-$version"
+mkdir "$ort_output_dir"
+mkdir -p "$ort_output_dir"/lib
+mkdir -p "$ort_output_dir"/include/core/providers
+cp build/Linux/Release/libonnxruntime.so* "$ort_output_dir"/lib/
+cp build/Linux/Release/*.so "$ort_output_dir"/lib/
+cp include/onnxruntime/core/session/*.h "$ort_output_dir"/include/
+cp include/onnxruntime/core/providers/cpu/cpu_provider_factory.h "$ort_output_dir"/include/
+cp -r build/Linux/Release/dist/ "$ort_output_dir"/
+cp VERSION_NUMBER "$ort_output_dir"/
+cp ThirdPartyNotices.txt "$ort_output_dir"/
+cp README.md "$ort_output_dir"/
+cp LICENSE "$ort_output_dir"/
+
+command -v zip >/dev/null 2>&1 || sudo apt install -y zip
+zip -r "$ort_output_dir".zip "$ort_output_dir"/
+
+echo "Packaging complete!"
+echo "Output directory: $ort_output_dir"
+echo "Zip archive created: $ort_output_dir.zip"
