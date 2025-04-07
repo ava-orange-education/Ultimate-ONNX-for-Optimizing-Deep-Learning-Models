@@ -1,20 +1,21 @@
 # Use docker image for Raspberry Pi3 (Bookworm) with arm64/v8
 mkdir C:\tmp\
 docker run -it --platform=linux/arm64/v8 -v C:\tmp\:/home/ balenalib/raspberrypi3-64:bookworm-build bash
+cd /home/
 
 sudo apt update
-sudo apt install build-essential libssl-dev ninja-build python3-pip python3.11-venv python3-numpy -y
+sudo apt install build-essential libssl-dev ninja-build python3-pip python3.11-venv python3-dev -y
 
 # CMake 3.28 or higher is required.
 wget https://github.com/Kitware/CMake/releases/download/v3.28.4/cmake-3.28.4-linux-aarch64.sh
 chmod +x cmake-3.28.4-linux-aarch64.sh
 ./cmake-3.28.4-linux-aarch64.sh
-export PATH=/home/new_ort/cmake-3.28.4-linux-aarch64/bin:$PATH
+export PATH=/home/cmake-3.28.4-linux-aarch64/bin:$PATH
 
 # Create new python environment
 python3 -m venv py_env
 source ./py_env/bin/activate
-python3 -m pip install packaging wheel
+python3 -m pip install packaging wheel numpy
 
 # Clone ONNX Runtime
 git clone --recursive https://github.com/microsoft/onnxruntime.git
