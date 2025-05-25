@@ -9,11 +9,11 @@ from datasets import load_dataset
 # Usage Example
 if __name__ == "__main__":
     # Prepare sample input
-    
+
     # load librispeech ASR dataset and read audio files
     ds = load_dataset("librispeech_asr", "clean", split="validation", streaming=True, trust_remote_code=True)
     sample = next(iter(ds))
-    
+
     # Load processor
     processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
 
